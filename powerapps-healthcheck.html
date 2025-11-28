@@ -278,27 +278,27 @@
     <div>
       <div class="tag">Power Apps → Power Automate → デスクトップフロー</div>
       <h1>ヘルスチェック実行パネル</h1>
+      <p style="color: var(--muted); margin: 6px 0 0; font-weight: 600; font-size: 13px;">全実行と個別実行の２通りから、チェック項目サンプルを Power Automate 経由で直列実行する想定のUIです。</p>
     </div>
-    <button class="btn" id="runAllBtn" aria-label="ヘルスチェック全実行">
-      ▶ 全実行
-    </button>
   </header>
 
   <div class="layout">
     <section class="card">
       <h2>実行設定</h2>
-      <p style="color: var(--muted); margin: 0 0 12px;">横画面で複数チェック項目の進捗をまとめて確認できます。Power Apps から Power Automate を経由し、デスクトップフローを直列で呼び出す想定のUIです。</p>
       <div class="actions">
-        <div class="row">
-          <button class="btn" id="runAllBtnSide" aria-label="全てのチェックを実行">▶ 全実行</button>
-          <div style="display: flex; gap: 8px;">
-            <select id="checkSelect" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);"></select>
-            <button class="ghost-btn" id="runSelectedBtn" aria-label="選択したチェックを実行">▶ 選択実行</button>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn" id="runAllBtn" aria-label="全てのチェックを実行" style="flex: 0 0 140px;">▶ 全実行</button>
+            <div style="display: flex; gap: 8px; flex: 1; align-items: center;">
+              <select id="checkSelect" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);"></select>
+              <button class="ghost-btn" id="runSelectedBtn" aria-label="選択したチェックを実行">▶ 選択実行</button>
+            </div>
           </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button class="ghost-btn" id="stopBtn" aria-label="実行停止">■ 停止</button>
-          <span style="font-size: 12px; color: var(--muted); font-weight: 700;">次のデスクトップフローから停止します</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="ghost-btn" id="stopBtn" aria-label="実行停止" style="flex: 0 0 120px;">■ 停止</button>
+            <span style="font-size: 12px; color: var(--muted); font-weight: 700;">次のデスクトップフローから停止します</span>
+          </div>
+          <p style="margin: 0; color: var(--muted); font-weight: 600; font-size: 12px;">全実行では登録された全てのチェック項目サンプルを直列で実施し、選択実行ではドロップダウンで指定した項目のみを実施します。</p>
         </div>
       </div>
 
@@ -316,7 +316,7 @@
           <strong id="errorCount">0</strong>
         </div>
         <div class="stat">
-          <label>表示モード</label>
+          <label>実行モード / 開始</label>
           <strong id="modeLabel">-</strong>
         </div>
       </div>
@@ -443,12 +443,8 @@
     }
 
     document.getElementById("runAllBtn").addEventListener("click", () => {
-      setMode("全実行", checks);
-      alert("Power Automate 経由でデスクトップフローを全実行します (デモ)");
-    });
-
-    document.getElementById("runAllBtnSide").addEventListener("click", () => {
-      setMode("全実行", checks);
+      const startedAt = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setMode(`全実行 (${startedAt} 開始)`, checks);
       alert("Power Automate 経由でデスクトップフローを全実行します (デモ)");
     });
 
@@ -456,7 +452,8 @@
       const targetId = select.value;
       const target = checks.find(c => c.id === targetId);
       if (!target) return;
-      setMode("個別実行", [target]);
+      const startedAt = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setMode(`個別実行 (${startedAt} 開始)`, [target]);
       alert(`${target.item} を Power Automate 経由で実行します (デモ)`);
     });
 
