@@ -53,6 +53,7 @@
 
     .layout {
       display: grid;
+      grid-template-columns: 360px 1fr;
       grid-template-columns: 320px 1fr;
       gap: 16px;
     }
@@ -251,6 +252,15 @@
 
     .actions {
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .actions .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
       align-items: center;
       gap: 8px;
       margin-top: 10px;
@@ -272,6 +282,8 @@
     <div>
       <div class="tag">Power Apps → Power Automate → デスクトップフロー</div>
       <h1>ヘルスチェック実行パネル</h1>
+      <p style="color: var(--muted); margin: 6px 0 0; font-weight: 600; font-size: 13px;">全実行と個別実行の２通りから、チェック項目サンプルを Power Automate 経由で直列実行する想定のUIです。</p>
+    </div>
     </div>
     <button class="btn" id="runBtn" aria-label="ヘルスチェック実行">
       ▶ 実行
@@ -281,6 +293,21 @@
   <div class="layout">
     <section class="card">
       <h2>実行設定</h2>
+      <div class="actions">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn" id="runAllBtn" aria-label="全てのチェックを実行" style="flex: 0 0 140px;">▶ 全実行</button>
+            <div style="display: flex; gap: 8px; flex: 1; align-items: center;">
+              <select id="checkSelect" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);"></select>
+              <button class="ghost-btn" id="runSelectedBtn" aria-label="選択したチェックを実行">▶ 選択実行</button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="ghost-btn" id="stopBtn" aria-label="実行停止" style="flex: 0 0 120px;">■ 停止</button>
+            <span style="font-size: 12px; color: var(--muted); font-weight: 700;">次のデスクトップフローから停止します</span>
+          </div>
+          <p style="margin: 0; color: var(--muted); font-weight: 600; font-size: 12px;">全実行では登録された全てのチェック項目サンプルを直列で実施し、選択実行ではドロップダウンで指定した項目のみを実施します。</p>
+        </div>
       <p style="color: var(--muted); margin: 0 0 12px;">横画面で複数サーバーの状態をまとめて確認できます。Power Apps から Power Automate を経由し、デスクトップフローを直列で呼び出す想定のUIです。</p>
       <div class="actions">
         <select style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border);">
@@ -292,6 +319,7 @@
 
       <div class="summary">
         <div class="stat">
+          <label>対象チェック</label>
           <label>対象サーバー</label>
           <strong id="serverCount">0</strong>
         </div>
@@ -306,6 +334,10 @@
         <div class="stat">
           <label>エラー</label>
           <strong id="errorCount">0</strong>
+        </div>
+        <div class="stat">
+          <label>実行モード / 開始</label>
+          <strong id="modeLabel">-</strong>
         </div>
       </div>
 
@@ -335,6 +367,12 @@
     </section>
 
     <section class="card table-card">
+      <h3>チェック項目一覧 <small>全実行または個別実行後に対象を表示</small></h3>
+      <table aria-label="チェック項目一覧">
+        <thead>
+          <tr>
+            <th>チェック項目</th>
+            <th style="width: 200px;">内容</th>
       <h3>ヘルスチェック一覧 <small>同一画面で進捗をライブ確認</small></h3>
       <table aria-label="ヘルスチェック一覧">
         <thead>
@@ -347,11 +385,20 @@
         </thead>
         <tbody id="checkTable"></tbody>
       </table>
+      <div id="placeholder" style="margin-top: 8px; color: var(--muted); font-weight: 600;">全実行か、個別実行後に表示します。</div>
     </section>
   </div>
 
   <script>
     const checks = [
+      { id: "sample1", item: "チェック項目サンプル１", detail: "Web 応答確認", status: "running", start: "09:00", end: "-" },
+      { id: "sample2", item: "チェック項目サンプル２", detail: "証明書期限チェック", status: "pending", start: "-", end: "-" },
+      { id: "sample3", item: "チェック項目サンプル３", detail: "CPU / メモリ利用率", status: "ok", start: "08:55", end: "09:00" },
+      { id: "sample4", item: "チェック項目サンプル４", detail: "API 応答コード監視", status: "ok", start: "08:55", end: "09:00" },
+      { id: "sample5", item: "チェック項目サンプル５", detail: "バックアップ成否", status: "error", start: "08:50", end: "08:53" },
+      { id: "sample6", item: "チェック項目サンプル６", detail: "可用性レプリカ遅延", status: "pending", start: "-", end: "-" },
+      { id: "sample7", item: "チェック項目サンプル７", detail: "バッチ処理完了", status: "ok", start: "07:00", end: "07:10" },
+      { id: "sample8", item: "チェック項目サンプル８", detail: "スケジュール確認", status: "pending", start: "-", end: "-" }
       { server: "WEB-01", item: "IIS 稼働 / 応答時間", status: "running", start: "09:00", end: "-" },
       { server: "WEB-01", item: "証明書期限 / 監視", status: "pending", start: "-", end: "-" },
       { server: "API-02", item: "CPU / メモリ利用率", status: "ok", start: "08:55", end: "09:00" },
@@ -370,18 +417,33 @@
     };
 
     const table = document.getElementById("checkTable");
+    const placeholder = document.getElementById("placeholder");
+    const select = document.getElementById("checkSelect");
     const overallProgress = document.getElementById("overallProgress");
-    const serverCount = document.getElementById("serverCount");
     const itemCount = document.getElementById("itemCount");
     const doneCount = document.getElementById("doneCount");
     const errorCount = document.getElementById("errorCount");
+    const modeLabel = document.getElementById("modeLabel");
+
+    let visibleChecks = [];
+    let currentMode = "-";
+
+    function populateDropdown() {
+      select.innerHTML = "";
+      checks.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = `${c.item} (${c.detail})`;
+        select.appendChild(option);
+      });
+    }
 
     function render() {
-      const servers = new Set();
       let done = 0;
       let errors = 0;
 
       table.innerHTML = "";
+      visibleChecks.forEach(row => {
       checks.forEach(row => {
         servers.add(row.server);
         if (row.status === "ok") done += 1;
@@ -390,6 +452,8 @@
         const status = statusMap[row.status];
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td><strong>${row.item}</strong></td>
+          <td>${row.detail}</td>
           <td><strong>${row.server}</strong></td>
           <td>${row.item}</td>
           <td><span class="status ${status.class}"><span class="dot"></span>${status.label}</span></td>
@@ -398,6 +462,44 @@
         table.appendChild(tr);
       });
 
+      placeholder.style.display = visibleChecks.length ? "none" : "block";
+
+      const total = visibleChecks.length || 1;
+      const progress = Math.round((done / total) * 100);
+      overallProgress.style.width = progress + "%";
+
+      itemCount.textContent = visibleChecks.length;
+      doneCount.textContent = done;
+      errorCount.textContent = errors;
+      modeLabel.textContent = currentMode;
+    }
+
+    function setMode(mode, list) {
+      currentMode = mode;
+      visibleChecks = list;
+      render();
+    }
+
+    document.getElementById("runAllBtn").addEventListener("click", () => {
+      const startedAt = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setMode(`全実行 (${startedAt} 開始)`, checks);
+      alert("Power Automate 経由でデスクトップフローを全実行します (デモ)");
+    });
+
+    document.getElementById("runSelectedBtn").addEventListener("click", () => {
+      const targetId = select.value;
+      const target = checks.find(c => c.id === targetId);
+      if (!target) return;
+      const startedAt = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setMode(`個別実行 (${startedAt} 開始)`, [target]);
+      alert(`${target.item} を Power Automate 経由で実行します (デモ)`);
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      alert("次のデスクトップフローから停止します (デモ)");
+    });
+
+    populateDropdown();
       const total = checks.length;
       const progress = Math.round((done / total) * 100);
       overallProgress.style.width = progress + "%";
