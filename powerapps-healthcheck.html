@@ -54,6 +54,7 @@
     .layout {
       display: grid;
       grid-template-columns: 360px 1fr;
+      grid-template-columns: 320px 1fr;
       gap: 16px;
     }
 
@@ -260,6 +261,9 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
     }
 
     .ghost-btn {
@@ -280,6 +284,10 @@
       <h1>ヘルスチェック実行パネル</h1>
       <p style="color: var(--muted); margin: 6px 0 0; font-weight: 600; font-size: 13px;">全実行と個別実行の２通りから、チェック項目サンプルを Power Automate 経由で直列実行する想定のUIです。</p>
     </div>
+    </div>
+    <button class="btn" id="runBtn" aria-label="ヘルスチェック実行">
+      ▶ 実行
+    </button>
   </header>
 
   <div class="layout">
@@ -300,11 +308,23 @@
           </div>
           <p style="margin: 0; color: var(--muted); font-weight: 600; font-size: 12px;">全実行では登録された全てのチェック項目サンプルを直列で実施し、選択実行ではドロップダウンで指定した項目のみを実施します。</p>
         </div>
+      <p style="color: var(--muted); margin: 0 0 12px;">横画面で複数サーバーの状態をまとめて確認できます。Power Apps から Power Automate を経由し、デスクトップフローを直列で呼び出す想定のUIです。</p>
+      <div class="actions">
+        <select style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border);">
+          <option>平日日次チェック (全サーバー)</option>
+          <option>週末フルチェック (冗長系含む)</option>
+          <option>オンデマンド：Web/API 系</option>
+        </select>
       </div>
 
       <div class="summary">
         <div class="stat">
           <label>対象チェック</label>
+          <label>対象サーバー</label>
+          <strong id="serverCount">0</strong>
+        </div>
+        <div class="stat">
+          <label>チェック項目</label>
           <strong id="itemCount">0</strong>
         </div>
         <div class="stat">
@@ -353,6 +373,12 @@
           <tr>
             <th>チェック項目</th>
             <th style="width: 200px;">内容</th>
+      <h3>ヘルスチェック一覧 <small>同一画面で進捗をライブ確認</small></h3>
+      <table aria-label="ヘルスチェック一覧">
+        <thead>
+          <tr>
+            <th style="width: 160px;">サーバー</th>
+            <th>チェック項目</th>
             <th style="width: 160px;">状態</th>
             <th style="width: 120px;">開始→終了</th>
           </tr>
@@ -373,6 +399,14 @@
       { id: "sample6", item: "チェック項目サンプル６", detail: "可用性レプリカ遅延", status: "pending", start: "-", end: "-" },
       { id: "sample7", item: "チェック項目サンプル７", detail: "バッチ処理完了", status: "ok", start: "07:00", end: "07:10" },
       { id: "sample8", item: "チェック項目サンプル８", detail: "スケジュール確認", status: "pending", start: "-", end: "-" }
+      { server: "WEB-01", item: "IIS 稼働 / 応答時間", status: "running", start: "09:00", end: "-" },
+      { server: "WEB-01", item: "証明書期限 / 監視", status: "pending", start: "-", end: "-" },
+      { server: "API-02", item: "CPU / メモリ利用率", status: "ok", start: "08:55", end: "09:00" },
+      { server: "API-02", item: "エンドポイント応答コード", status: "ok", start: "08:55", end: "09:00" },
+      { server: "DB-PRD", item: "バックアップ成否 / 最新世代", status: "error", start: "08:50", end: "08:53" },
+      { server: "DB-PRD", item: "可用性グループレプリカ", status: "pending", start: "-", end: "-" },
+      { server: "JOB-SVC", item: "夜間バッチ完了", status: "ok", start: "07:00", end: "07:10" },
+      { server: "JOB-SVC", item: "スケジュール有効 / 次回予定", status: "pending", start: "-", end: "-" }
     ];
 
     const statusMap = {
@@ -410,6 +444,8 @@
 
       table.innerHTML = "";
       visibleChecks.forEach(row => {
+      checks.forEach(row => {
+        servers.add(row.server);
         if (row.status === "ok") done += 1;
         if (row.status === "error") errors += 1;
 
@@ -418,6 +454,8 @@
         tr.innerHTML = `
           <td><strong>${row.item}</strong></td>
           <td>${row.detail}</td>
+          <td><strong>${row.server}</strong></td>
+          <td>${row.item}</td>
           <td><span class="status ${status.class}"><span class="dot"></span>${status.label}</span></td>
           <td><div style="color: var(--muted); font-weight: 600;">${row.start} → ${row.end}</div></td>
         `;
@@ -462,6 +500,20 @@
     });
 
     populateDropdown();
+      const total = checks.length;
+      const progress = Math.round((done / total) * 100);
+      overallProgress.style.width = progress + "%";
+
+      serverCount.textContent = servers.size;
+      itemCount.textContent = total;
+      doneCount.textContent = done;
+      errorCount.textContent = errors;
+    }
+
+    document.getElementById("runBtn").addEventListener("click", () => {
+      alert("Power Automate 経由でデスクトップフローを起動します (デモ)");
+    });
+
     render();
   </script>
 </body>
